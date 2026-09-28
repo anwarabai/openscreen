@@ -147,6 +147,25 @@ export const WEBCAM_SIZE_MIN = 15;
 export const WEBCAM_SIZE_MAX = 50;
 
 /**
+ * The picture-in-picture camera box's proportions, width over height, once the user sets them:
+ * the Portrait shape, or a box stretched by its side handles. `null` follows the shape instead,
+ * the camera's own proportions for "rectangle" and 1 for "square". The camera fills the box and
+ * the compositor crops what overflows, so no proportion distorts the picture. The range stops
+ * the box short of a sliver: 1:2 to 2:1.
+ */
+export const WEBCAM_ASPECT_PORTRAIT = 9 / 16;
+export const WEBCAM_ASPECT_MIN = 0.5;
+export const WEBCAM_ASPECT_MAX = 2;
+
+/** A stored box proportion, read into its bound. A square camera has no proportion to set. */
+export function readWebcamAspect(value: unknown, shape: WebcamMask): number | null {
+	if (shape === "square") return null;
+	return typeof value === "number" && Number.isFinite(value)
+		? clampToBound(value, "webcamAspect")
+		: null;
+}
+
+/**
  * Reads a stored camera shape and roundness. `circle` and `rounded` were a proportion and a
  * rounding folded into one value; they split here into the two settings, the way
  * `readRecordingFrame` splits the old window themes. A stored roundness wins.
@@ -183,6 +202,8 @@ export interface ProjectAppearanceDefaults {
 	webcamLayoutPreset: "picture-in-picture" | "vertical-stack" | "dual-frame" | "no-webcam";
 	/** The camera's proportions: its own ("rectangle") or cropped square. See `readWebcamMask`. */
 	webcamMaskShape: WebcamMask;
+	/** Width over height of a "rectangle" box the user shaped, or null for the camera's own. */
+	webcamAspect: number | null;
 	/** 0 square corners to 1 fully round. See `DEFAULT_WEBCAM_ROUNDNESS`. */
 	webcamRoundness: number;
 	webcamMirrored: boolean;
@@ -228,6 +249,7 @@ export const DEFAULT_PROJECT_APPEARANCE: ProjectAppearanceDefaults = {
 	padding: 50,
 	webcamLayoutPreset: "picture-in-picture",
 	webcamMaskShape: "rectangle",
+	webcamAspect: null,
 	webcamRoundness: DEFAULT_WEBCAM_ROUNDNESS,
 	webcamMirrored: false,
 	webcamReactiveZoom: true,
@@ -274,6 +296,7 @@ export const SETTING_BOUNDS = {
 	borderRadius: [0, 64],
 	padding: [0, 100],
 	webcamSizePreset: [WEBCAM_SIZE_MIN, WEBCAM_SIZE_MAX],
+	webcamAspect: [WEBCAM_ASPECT_MIN, WEBCAM_ASPECT_MAX],
 	webcamRoundness: [0, 1],
 	webcamBlurIntensity: [0, 1],
 	// 1.5 is the default: nothing smaller reads in a demo. At 6 the arrow is 164 px tall in a

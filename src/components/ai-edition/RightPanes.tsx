@@ -124,6 +124,7 @@ import {
 	type RecordingFrame,
 	SETTING_BOUNDS,
 	WEBCAM_ANCHOR_GRID,
+	WEBCAM_ASPECT_PORTRAIT,
 	WEBCAM_SIZE_MAX,
 	WEBCAM_SIZE_MIN,
 	type WebcamAnchor,
@@ -2686,11 +2687,35 @@ const WEBCAM_PRESETS = [
 // (1 = fixture default), so the slider reads as a direct multiplier on the shipped webcam.
 const NATIVE_WEBCAM_BASE_PCT = 16.7;
 
-// The camera's two proportions. Its rounding is the slider under them, and each icon draws it.
+// The camera's proportions: its own, square, or portrait. Its rounding is the slider under them,
+// and each icon draws it. Portrait is a 9:16 box the camera is cropped to; a box the resize
+// handles stretched to anything else reads as "Custom" and lights no tile.
+type CameraShapeChoice = WebcamMask | "portrait";
 const CAMERA_SHAPES = [
 	{ value: "rectangle", labelKey: "layout.shapes.rectangle", x: 3, y: 6, w: 18, h: 12 },
 	{ value: "square", labelKey: "layout.shapes.square", x: 4, y: 4, w: 16, h: 16 },
-] as const satisfies ReadonlyArray<{ value: WebcamMask } & Record<string, unknown>>;
+	{ value: "portrait", labelKey: "layout.shapes.portrait", x: 7.5, y: 4, w: 9, h: 16 },
+] as const satisfies ReadonlyArray<{ value: CameraShapeChoice } & Record<string, unknown>>;
+
+/** The tile a camera's settings light, or "custom" for a proportion no tile names. */
+export function cameraShapeChoice(
+	shape: WebcamMask,
+	aspect: number | null,
+): CameraShapeChoice | "custom" {
+	if (shape === "square") return "square";
+	if (aspect === null) return "rectangle";
+	return Math.abs(aspect - WEBCAM_ASPECT_PORTRAIT) < 0.001 ? "portrait" : "custom";
+}
+
+/** The settings a tile stands for. */
+function cameraShapeSettings(choice: CameraShapeChoice): {
+	webcamMaskShape: WebcamMask;
+	webcamAspect: number | null;
+} {
+	return choice === "portrait"
+		? { webcamMaskShape: "rectangle", webcamAspect: WEBCAM_ASPECT_PORTRAIT }
+		: { webcamMaskShape: choice, webcamAspect: null };
+}
 
 const ANCHOR_KEYS: Record<WebcamAnchor, string> = {
 	"top-left": "layout.anchors.topLeft",
@@ -2814,6 +2839,7 @@ export function LayoutPane() {
 	// to the screen as one block — the mask is rectangular and sized off the
 	// screen capture — so we hide those controls when the preset isn't PiP.
 	const isPip = effectiveLayoutPreset === "picture-in-picture";
+	const shapeChoice = cameraShapeChoice(settings.webcamMaskShape, settings.webcamAspect);
 	// Same reason for "Shrink on zoom": shrinking the camera mid-zoom would tear a
 	// hole in the block, so the block layouts force it off (see
 	// `supportsWebcamReactiveZoom`) and the toggle is dropped rather than shown
@@ -2914,9 +2940,14 @@ export function LayoutPane() {
 			) : null}
 			{isPip ? (
 				<>
-					<div className={styles.sectionLabel}>{ts("layout.webcamShape")}</div>
+					<div className={styles.sectionLabel}>
+						{ts("layout.webcamShape")}
+						{shapeChoice === "custom" ? (
+							<span className={styles.sectionLabelValue}>{ts("layout.shapes.custom")}</span>
+						) : null}
+					</div>
 					<div style={{ padding: "0 var(--sp-4) 12px" }}>
-						<ChoiceRow<WebcamMask>
+						<ChoiceRow<CameraShapeChoice | "custom">
 							label={ts("layout.webcamShape")}
 							display="both"
 							tiles
@@ -2943,12 +2974,14 @@ export function LayoutPane() {
 									</svg>
 								),
 							}))}
-							value={settings.webcamMaskShape}
+							value={shapeChoice}
 							disabled={layoutControlsDisabled}
-							onChange={(shape) => {
-								void set({ webcamMaskShape: shape });
+							onChange={(choice) => {
+								if (choice === "custom") return;
+								const next = cameraShapeSettings(choice);
+								void set(next);
 								if (isNativeCompositorActive()) {
-									setNativeParam("webcamShape", shape);
+									setNativeParam("webcamShape", next.webcamMaskShape);
 								}
 							}}
 						/>

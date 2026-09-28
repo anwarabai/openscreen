@@ -67,6 +67,7 @@ import { NativeCompositorOverlay } from "./NativeCompositorOverlay";
 import styles from "./NewEditorShell.module.css";
 import { type VideoSource, VirtualPreview } from "./VirtualPreview";
 import { WebcamOverlay } from "./WebcamOverlay";
+import { WebcamResizeHandles } from "./WebcamResizeHandles";
 import { ZoomFocusOverlay } from "./ZoomFocusOverlay";
 
 type BlurData = NonNullable<AxcutAnnotationRegion["blurData"]>;
@@ -241,6 +242,8 @@ export function PreviewCanvas(props: PreviewCanvasProps) {
 		[assets, props.clips, props.currentTimeSec],
 	);
 	const activeClipHasCamera = Boolean(activeCameraTrack?.visible && activeCameraTrack.sourcePath);
+	const cameraTrackWidth = activeCameraTrack?.width;
+	const cameraTrackHeight = activeCameraTrack?.height;
 
 	const formatFill = useMemo(() => (document ? isFormatFillActive(document) : false), [document]);
 	const layout = useMemo(() => {
@@ -268,17 +271,29 @@ export function PreviewCanvas(props: PreviewCanvasProps) {
 			width: Math.max(1, Math.round(fullScreenSize.width * cropRegion.width)),
 			height: Math.max(1, Math.round(fullScreenSize.height * cropRegion.height)),
 		};
+		// The camera as recorded, then cropped, the way the scene sizes it (`webcamSourceSizeOf`).
+		// The 4:3 guess alone put this hitbox, and the handles on it, off the box the compositor
+		// draws for any other camera.
+		const cameraSize =
+			cameraTrackWidth && cameraTrackHeight
+				? { width: cameraTrackWidth, height: cameraTrackHeight }
+				: WEBCAM_SOURCE_SIZE;
+		const croppedCameraSize = {
+			width: Math.max(1, Math.round(cameraSize.width * settings.webcamCropRegion.width)),
+			height: Math.max(1, Math.round(cameraSize.height * settings.webcamCropRegion.height)),
+		};
 		return computeCompositeLayout({
 			canvasSize: frameSize,
 			maxContentSize,
 			// Same box as the scene: a filled format gives the screen the whole padded area.
 			screenSize: formatFill ? maxContentSize : croppedScreenSize,
-			webcamSize: preset === "no-webcam" ? null : WEBCAM_SOURCE_SIZE,
+			webcamSize: preset === "no-webcam" ? null : croppedCameraSize,
 			layoutPreset: preset,
 			webcamSizePreset: settings.webcamSizePreset,
 			// Picture-in-picture only: the block layouts place and round their own camera.
 			webcamAnchor: settings.webcamAnchor,
 			webcamMaskShape: mask,
+			webcamAspect: settings.webcamAspect,
 			webcamRoundness: settings.webcamRoundness,
 			frame: settings.frame,
 		});
@@ -287,8 +302,13 @@ export function PreviewCanvas(props: PreviewCanvasProps) {
 		screenNativeSize,
 		cropRegion,
 		activeClipHasCamera,
+		cameraTrackWidth,
+		cameraTrackHeight,
+		settings.webcamCropRegion.width,
+		settings.webcamCropRegion.height,
 		settings.webcamLayoutPreset,
 		settings.webcamMaskShape,
+		settings.webcamAspect,
 		settings.webcamSizePreset,
 		settings.webcamAnchor,
 		settings.webcamRoundness,
@@ -492,6 +512,23 @@ export function PreviewCanvas(props: PreviewCanvasProps) {
 					/>
 				</div>
 			) : null}
+			{/* Straight after the slot: its hover shows them (`.webcamSlot:hover + .webcamHandles`).
+			    Paused and at rest only, where the box on screen is the one the settings describe. */}
+			{layout?.webcamRect &&
+			showWebcamSlot &&
+			isPipGrab &&
+			!isPlaying &&
+			cameraFullscreenProgress <= 0 ? (
+				<WebcamResizeHandles
+					style={webcamRectPosition(layout.webcamRect, frameSize)}
+					anchor={settings.webcamAnchor}
+					shape={settings.webcamMaskShape}
+					box={{ width: layout.webcamRect.width, height: layout.webcamRect.height }}
+					referenceDim={Math.min(frameSize.width, frameSize.height)}
+					onResize={(patch) => setLive(patch)}
+					onResizeEnd={() => void commit()}
+				/>
+			) : null}
 			{/* Last, so a selected annotation over the camera takes the pointer before the
 			    camera's drag hitbox does. It spans the frame: text, images and arrows move
 			    anywhere in it, over the padding too. */}
@@ -550,6 +587,20 @@ function videoBorderRadiusStyle(
 	return { borderRadius: `${borderRadius}px` };
 }
 
+/** A layout rect as percentages of the preview frame, the way the webcam slot is placed. */
+function webcamRectPosition(
+	r: { x: number; y: number; width: number; height: number },
+	canvasSize: { width: number; height: number },
+): React.CSSProperties {
+	return {
+		position: "absolute",
+		left: `${(r.x / canvasSize.width) * 100}%`,
+		top: `${(r.y / canvasSize.height) * 100}%`,
+		width: `${(r.width / canvasSize.width) * 100}%`,
+		height: `${(r.height / canvasSize.height) * 100}%`,
+	};
+}
+
 // Webcam slot: full composite-layout rect — sizes/positions the drag hitbox
 // (handleWebcamPointerDown) and the CSS-hidden webcam <video> (decode/clock
 // only). No borderRadius/boxShadow: the native canvas already draws its own
@@ -572,11 +623,7 @@ function buildWebcamStyle(
 	const mask = r.maskShape ?? (settings.webcamMaskShape as WebcamMaskShape);
 	const clipPath = getCssClipPath(mask);
 	const base: React.CSSProperties = {
-		position: "absolute",
-		left: `${(r.x / canvasSize.width) * 100}%`,
-		top: `${(r.y / canvasSize.height) * 100}%`,
-		width: `${(r.width / canvasSize.width) * 100}%`,
-		height: `${(r.height / canvasSize.height) * 100}%`,
+		...webcamRectPosition(r, canvasSize),
 		overflow: "hidden",
 		display: "flex",
 		background: "transparent",

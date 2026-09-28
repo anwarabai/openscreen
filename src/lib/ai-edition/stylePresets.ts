@@ -33,6 +33,7 @@ import {
 	LEGACY_BACKGROUND_BLUR_ON,
 	type RecordingFrame,
 	readRecordingFrame,
+	readWebcamAspect,
 	readWebcamMask,
 	type SettingBound,
 	type WebcamMask,
@@ -64,6 +65,8 @@ export interface StylePresetAppearance {
 	padding: number;
 	webcamLayoutPreset: WebcamLayoutPreset;
 	webcamMaskShape: WebcamMask;
+	/** Width over height of a shaped camera box, or null for the camera's own proportions. */
+	webcamAspect: number | null;
 	webcamRoundness: number;
 	webcamMirrored: boolean;
 	webcamReactiveZoom: boolean;
@@ -171,16 +174,29 @@ function readEnum<T extends string>(source: Fields, key: string, allowed: readon
 /**
  * The camera's proportions and roundness. A preset saved before the roundness existed carries
  * `circle` or `rounded`, a proportion and a rounding in one value: `readWebcamMask` splits it
- * the way the editor reads an old project.
+ * the way the editor reads an old project. One saved before the box could be shaped carries no
+ * `webcamAspect`, which is the camera's own proportions, exactly what it showed.
  */
-function readWebcamShape(source: Fields): { webcamMaskShape: WebcamMask; webcamRoundness: number } {
+function readWebcamShape(source: Fields): {
+	webcamMaskShape: WebcamMask;
+	webcamAspect: number | null;
+	webcamRoundness: number;
+} {
 	const shape = readEnum(source, "webcamMaskShape", WEBCAM_MASK_SHAPES);
 	const roundness =
 		source.webcamRoundness === undefined
 			? undefined
 			: readNumber(source, "webcamRoundness", "webcamRoundness");
 	const mask = readWebcamMask(shape, roundness);
-	return { webcamMaskShape: mask.shape, webcamRoundness: mask.roundness };
+	const aspect =
+		source.webcamAspect === undefined || source.webcamAspect === null
+			? null
+			: readNumber(source, "webcamAspect", "webcamAspect");
+	return {
+		webcamMaskShape: mask.shape,
+		webcamAspect: readWebcamAspect(aspect, mask.shape),
+		webcamRoundness: mask.roundness,
+	};
 }
 
 /**
@@ -420,6 +436,7 @@ export const LOOK_LEGACY_EDITOR_KEYS = [
 	"padding",
 	"webcamLayoutPreset",
 	"webcamMaskShape",
+	"webcamAspect",
 	"webcamRoundness",
 	"webcamMirrored",
 	"webcamReactiveZoom",

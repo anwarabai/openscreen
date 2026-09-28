@@ -288,7 +288,9 @@
 		"webcamFramingDrag": "Перетащите рамку, чтобы сдвинуть её, или угол, чтобы изменить масштаб.",
 		"shapes": {
 			"rectangle": "Прямоугольник",
-			"square": "Квадрат"
+			"square": "Квадрат",
+			"portrait": "Вертикальный",
+			"custom": "Свой"
 		},
 		"webcamPosition": "Положение",
 		"anchors": {

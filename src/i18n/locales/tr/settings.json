@@ -288,7 +288,9 @@
 		"webcamFramingDrag": "Taşımak için çerçeveyi, yakınlaştırmak için bir köşesini sürükleyin.",
 		"shapes": {
 			"rectangle": "Dikdörtgen",
-			"square": "Kare"
+			"square": "Kare",
+			"portrait": "Dikey",
+			"custom": "Özel"
 		},
 		"webcamPosition": "Konum",
 		"anchors": {

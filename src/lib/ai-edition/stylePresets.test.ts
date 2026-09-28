@@ -29,6 +29,7 @@ function appearance(overrides: Partial<StylePresetAppearance> = {}): StylePreset
 		padding: 50,
 		webcamLayoutPreset: "picture-in-picture",
 		webcamMaskShape: "square",
+		webcamAspect: null,
 		webcamRoundness: 1,
 		webcamMirrored: true,
 		webcamReactiveZoom: true,

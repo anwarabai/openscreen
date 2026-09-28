@@ -31,6 +31,7 @@ import {
 	readBounded,
 	readRecordingFrame,
 	readWebcamAnchor,
+	readWebcamAspect,
 	readWebcamMask,
 	type WebcamAnchor,
 	type WebcamMask,
@@ -111,6 +112,9 @@ export interface EditorSettingsSnapshot {
 	webcamLayoutPreset: WebcamLayoutPreset;
 	/** The camera's proportions. `circle` and `rounded` are read as a roundness: see `readWebcamMask`. */
 	webcamMaskShape: WebcamMask;
+	/** Width over height of a "rectangle" box the user shaped; null keeps the camera's own. See
+	 *  `readWebcamAspect`. Always null for "square". */
+	webcamAspect: number | null;
 	/** 0 square corners to 1 fully round, a fraction of half the camera's short side. */
 	webcamRoundness: number;
 	webcamMirrored: boolean;
@@ -166,6 +170,8 @@ interface LegacyShape {
 	cropRegion?: CropRegion;
 	webcamLayoutPreset?: WebcamLayoutPreset;
 	webcamMaskShape?: WebcamMaskShape;
+	/** `unknown` until read: see `readWebcamAspect`. */
+	webcamAspect?: unknown;
 	webcamRoundness?: number;
 	webcamMirrored?: boolean;
 	webcamReactiveZoom?: boolean;
@@ -290,6 +296,7 @@ export function getEditorSettings(doc: AxcutDocument | null | undefined): Editor
 		cropRegion: legacy?.cropRegion ?? DEFAULT_EDITOR_SETTINGS.cropRegion,
 		webcamLayoutPreset: legacy?.webcamLayoutPreset ?? DEFAULT_EDITOR_SETTINGS.webcamLayoutPreset,
 		webcamMaskShape: webcamMask.shape,
+		webcamAspect: readWebcamAspect(legacy?.webcamAspect, webcamMask.shape),
 		webcamRoundness: webcamMask.roundness,
 		webcamMirrored: bool(legacy?.webcamMirrored, DEFAULT_EDITOR_SETTINGS.webcamMirrored),
 		webcamReactiveZoom: bool(
@@ -348,6 +355,8 @@ export interface EditorSettingsPatch {
 	cropRegion?: CropRegion;
 	webcamLayoutPreset?: WebcamLayoutPreset;
 	webcamMaskShape?: WebcamMask;
+	/** `null` goes back to the camera's own proportions. */
+	webcamAspect?: number | null;
 	webcamRoundness?: number;
 	webcamMirrored?: boolean;
 	webcamReactiveZoom?: boolean;

@@ -1,5 +1,6 @@
 import { frameFootprint, frameUnit } from "@/lib/frameFootprint";
 import {
+	clampToBound,
 	DEFAULT_WEBCAM_ROUNDNESS,
 	type RecordingFrame,
 	WEBCAM_SIZE_MAX,
@@ -175,6 +176,13 @@ export function webcamSizeToFraction(percent: number): number {
 	const safe = Number.isFinite(percent) ? percent : 25;
 	const clamped = Math.max(WEBCAM_SIZE_MIN, Math.min(WEBCAM_SIZE_MAX, safe));
 	return clamped / 100;
+}
+
+/** A set box proportion held to its bound, or null when none is set. */
+function boxAspectOf(aspect: number | null | undefined): number | null {
+	return typeof aspect === "number" && Number.isFinite(aspect)
+		? clampToBound(aspect, "webcamAspect")
+		: null;
 }
 
 const MARGIN_FRACTION = 0.02;
@@ -411,6 +419,12 @@ export function computeCompositeLayout(params: {
 	/** Picture-in-picture only: where the camera sits. The block layouts place their own. */
 	webcamAnchor?: WebcamAnchor;
 	webcamMaskShape?: import("@/components/video-editor/types").WebcamMaskShape;
+	/**
+	 * Picture-in-picture "rectangle" only: the box's width over height, in place of the
+	 * camera's. The compositor covers the box with the camera, so the picture is cropped to
+	 * it, never stretched. `null` keeps the camera's own proportions.
+	 */
+	webcamAspect?: number | null;
 	/** Picture-in-picture only: 0 square corners to 1 fully round. */
 	webcamRoundness?: number;
 	/**
@@ -429,6 +443,7 @@ export function computeCompositeLayout(params: {
 		webcamSizePreset = 25,
 		webcamAnchor = "bottom-right",
 		webcamMaskShape = "rectangle",
+		webcamAspect = null,
 		webcamRoundness = DEFAULT_WEBCAM_ROUNDNESS,
 		frame = "none",
 	} = params;
@@ -587,9 +602,14 @@ export function computeCompositeLayout(params: {
 	const referenceDim = Math.min(canvasWidth, canvasHeight);
 	const maxWidth = Math.max(transform.minSize, referenceDim * MAX_STAGE_FRACTION);
 	const maxHeight = Math.max(transform.minSize, referenceDim * MAX_STAGE_FRACTION);
-	const scale = Math.min(maxWidth / webcamWidth, maxHeight / webcamHeight);
-	let width = Math.round(webcamWidth * scale);
-	let height = Math.round(webcamHeight * scale);
+	// A shaped box keeps the size rule: its long side is the size preset's share of the
+	// frame's short side, exactly as the camera's own long side is.
+	const shaped = webcamMaskShape === "rectangle" ? boxAspectOf(webcamAspect) : null;
+	const boxWidth = shaped ?? webcamWidth;
+	const boxHeight = shaped ? 1 : webcamHeight;
+	const scale = Math.min(maxWidth / boxWidth, maxHeight / boxHeight);
+	let width = Math.round(boxWidth * scale);
+	let height = Math.round(boxHeight * scale);
 
 	// Shape-specific dimension adjustments
 	if (webcamMaskShape === "circle" || webcamMaskShape === "square") {

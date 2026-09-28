@@ -288,7 +288,9 @@
 		"webcamFramingDrag": "枠をドラッグして移動、角をドラッグしてズームします。",
 		"shapes": {
 			"rectangle": "長方形",
-			"square": "正方形"
+			"square": "正方形",
+			"portrait": "縦長",
+			"custom": "カスタム"
 		},
 		"webcamPosition": "位置",
 		"anchors": {

@@ -759,6 +759,41 @@
 	visibility: hidden;
 	display: block;
 }
+/* Resize handles over the picture-in-picture camera (WebcamResizeHandles). The layer lets
+   the pointer through to the slot's move drag; only the handles take it. Shown while the
+   camera or a handle is hovered, and for the whole of a drag. */
+.webcamHandles {
+	pointer-events: none;
+	z-index: 3;
+	opacity: 0;
+	transition: opacity 120ms ease;
+	outline: 1px solid rgb(255 255 255 / 0.85);
+	box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25);
+}
+.webcamSlot:hover + .webcamHandles,
+.webcamHandles:hover,
+.webcamHandles[data-active] {
+	opacity: 1;
+}
+.webcamHandle {
+	position: absolute;
+	width: 12px;
+	height: 12px;
+	margin: -6px 0 0 -6px;
+	border-radius: 3px;
+	background: #fff;
+	box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+	pointer-events: auto;
+	touch-action: none;
+}
+.webcamHandle[data-handle="n"] { left: 50%; top: 0; cursor: ns-resize; }
+.webcamHandle[data-handle="s"] { left: 50%; top: 100%; cursor: ns-resize; }
+.webcamHandle[data-handle="e"] { left: 100%; top: 50%; cursor: ew-resize; }
+.webcamHandle[data-handle="w"] { left: 0; top: 50%; cursor: ew-resize; }
+.webcamHandle[data-handle="ne"] { left: 100%; top: 0; cursor: nesw-resize; }
+.webcamHandle[data-handle="sw"] { left: 0; top: 100%; cursor: nesw-resize; }
+.webcamHandle[data-handle="nw"] { left: 0; top: 0; cursor: nwse-resize; }
+.webcamHandle[data-handle="se"] { left: 100%; top: 100%; cursor: nwse-resize; }
 /* ─── transport bar (lives inside .timelineHead, next to the tool icons) ─ */
 .transport {
 	display: flex;

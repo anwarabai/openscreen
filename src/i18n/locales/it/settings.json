@@ -288,7 +288,9 @@
 		"webcamFramingDrag": "Trascina il riquadro per spostarlo, o un angolo per lo zoom.",
 		"shapes": {
 			"rectangle": "Rettangolo",
-			"square": "Quadrato"
+			"square": "Quadrato",
+			"portrait": "Verticale",
+			"custom": "Personalizzato"
 		},
 		"webcamPosition": "Posizione",
 		"anchors": {

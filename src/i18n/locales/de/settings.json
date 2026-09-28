@@ -288,7 +288,9 @@
 		"webcamFramingDrag": "Ziehe den Rahmen, um ihn zu verschieben, oder eine Ecke, um zu zoomen.",
 		"shapes": {
 			"rectangle": "Rechteck",
-			"square": "Quadrat"
+			"square": "Quadrat",
+			"portrait": "Hochformat",
+			"custom": "Benutzerdefiniert"
 		},
 		"webcamPosition": "Position",
 		"anchors": {

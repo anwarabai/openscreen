@@ -288,7 +288,9 @@
 		"webcamFramingDrag": "프레임을 드래그해 옮기고, 모서리를 드래그해 확대/축소하세요.",
 		"shapes": {
 			"rectangle": "직사각형",
-			"square": "정사각형"
+			"square": "정사각형",
+			"portrait": "세로",
+			"custom": "사용자 지정"
 		},
 		"webcamPosition": "위치",
 		"anchors": {

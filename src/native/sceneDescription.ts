@@ -1129,6 +1129,7 @@ export function buildSceneDescription(
 			webcamSizePreset: settings.webcamSizePreset,
 			webcamAnchor: settings.webcamAnchor,
 			webcamMaskShape: settings.webcamMaskShape,
+			webcamAspect: settings.webcamAspect,
 			webcamRoundness: settings.webcamRoundness,
 			frame: settings.frame,
 		});

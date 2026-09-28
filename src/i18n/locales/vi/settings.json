@@ -288,7 +288,9 @@
 		"webcamFramingDrag": "Kéo khung để di chuyển, hoặc kéo một góc để thu phóng.",
 		"shapes": {
 			"rectangle": "Chữ nhật",
-			"square": "Vuông"
+			"square": "Vuông",
+			"portrait": "Dọc",
+			"custom": "Tùy chỉnh"
 		},
 		"webcamPosition": "Vị trí",
 		"anchors": {

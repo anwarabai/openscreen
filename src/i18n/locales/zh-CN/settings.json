@@ -288,7 +288,9 @@
 		"webcamFramingDrag": "拖动取景框可移动，拖动一角可缩放。",
 		"shapes": {
 			"rectangle": "矩形",
-			"square": "正方形"
+			"square": "正方形",
+			"portrait": "竖屏",
+			"custom": "自定义"
 		},
 		"webcamPosition": "位置",
 		"anchors": {

@@ -237,7 +237,7 @@ describe("LayoutPane picture-in-picture camera", () => {
 		const shapes = within(screen.getByRole("group", { name: "Camera shape" })).getAllByRole(
 			"button",
 		);
-		expect(shapes.map((b) => b.textContent)).toEqual(["Rectangle", "Square"]);
+		expect(shapes.map((b) => b.textContent)).toEqual(["Rectangle", "Square", "Portrait"]);
 		fireEvent.click(screen.getByRole("button", { name: "Square" }));
 		expect(stored()).toMatchObject({ webcamMaskShape: "square" });
 		fireEvent.change(screen.getByRole("slider", { name: "Roundness" }), {
@@ -245,6 +245,31 @@ describe("LayoutPane picture-in-picture camera", () => {
 		});
 		// Each control moves its own axis only: full roundness leaves the shape a square.
 		expect(stored()).toMatchObject({ webcamMaskShape: "square", webcamRoundness: 1 });
+	});
+
+	it("shapes the camera into a 9:16 portrait box and back to its own proportions", () => {
+		renderLayout(seedProject(true));
+		fireEvent.click(screen.getByRole("button", { name: "Portrait" }));
+		expect(stored()).toMatchObject({ webcamMaskShape: "rectangle", webcamAspect: 9 / 16 });
+		expect(screen.getByRole("button", { name: "Portrait" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Rectangle" }));
+		expect(stored()).toMatchObject({ webcamMaskShape: "rectangle", webcamAspect: null });
+		fireEvent.click(screen.getByRole("button", { name: "Portrait" }));
+		fireEvent.click(screen.getByRole("button", { name: "Square" }));
+		expect(stored()).toMatchObject({ webcamMaskShape: "square", webcamAspect: null });
+	});
+
+	it("names a box the handles stretched Custom and lights no tile", () => {
+		const doc = seedProject(true);
+		renderLayout({ ...doc, legacyEditor: { ...doc.legacyEditor, webcamAspect: 0.75 } });
+		expect(screen.getByText("Custom")).toBeInTheDocument();
+		const shapes = within(screen.getByRole("group", { name: "Camera shape" })).getAllByRole(
+			"button",
+		);
+		for (const tile of shapes) expect(tile).toHaveAttribute("aria-pressed", "false");
 	});
 
 	it("places the camera on one of eight anchors, bottom right by default", () => {
