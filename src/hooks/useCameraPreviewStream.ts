@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { webcamVideoConstraints } from "@/lib/webcamCaptureConstraints";
 
 export interface CameraPreviewStreamOptions {
 	enabled: boolean;
@@ -10,6 +11,9 @@ export interface CameraPreviewStreamOptions {
  * from the recorder's own capture stream (useScreenRecorder keeps that in a
  * private ref), so this is safe to mount anywhere that just wants to *show*
  * the camera is working, not record it.
+ *
+ * It still asks for the recorder's size: Chromium shares one capture per camera,
+ * so a preview opened at the 640x480 default would pin the recording to it too.
  */
 export function useCameraPreviewStream({ enabled, deviceId }: CameraPreviewStreamOptions) {
 	const [stream, setStream] = useState<MediaStream | null>(null);
@@ -28,7 +32,7 @@ export function useCameraPreviewStream({ enabled, deviceId }: CameraPreviewStrea
 		let cancelled = false;
 		navigator.mediaDevices
 			.getUserMedia({
-				video: deviceId ? { deviceId: { exact: deviceId } } : true,
+				video: webcamVideoConstraints(deviceId),
 				audio: false,
 			})
 			.then((s) => {

@@ -19,6 +19,7 @@ import {
 import type { CursorCaptureMode, RecordedVideoAssetInput } from "@/lib/recordingSession";
 import { requestCameraAccess } from "@/lib/requestCameraAccess";
 import { loadUserPreferences, saveUserPreferences } from "@/lib/userPreferences";
+import { WEBCAM_TARGET_FRAME_RATE, webcamVideoConstraints } from "@/lib/webcamCaptureConstraints";
 import { canRecordMicrophone } from "@/utils/platformUtils";
 import { createRecorderHandle, type RecorderHandle } from "./recorderHandle";
 import { webcamDeviceIdentityFrom } from "./webcamDeviceIdentity";
@@ -76,8 +77,6 @@ function effectiveBrowserCursorMode(
 
 const AUDIO_BITRATE_VOICE = 128_000;
 const AUDIO_BITRATE_SYSTEM = 192_000;
-
-const WEBCAM_TARGET_FRAME_RATE = 30;
 
 type UseScreenRecorderReturn = {
 	recording: boolean;
@@ -473,14 +472,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			try {
 				const stream = await navigator.mediaDevices.getUserMedia({
 					audio: false,
-					video: webcamDeviceId
-						? {
-								deviceId: { exact: webcamDeviceId },
-								frameRate: { ideal: WEBCAM_TARGET_FRAME_RATE, max: WEBCAM_TARGET_FRAME_RATE },
-							}
-						: {
-								frameRate: { ideal: WEBCAM_TARGET_FRAME_RATE, max: WEBCAM_TARGET_FRAME_RATE },
-							},
+					video: webcamVideoConstraints(webcamDeviceId),
 				});
 
 				if (cancelled || thisAcquireId !== webcamAcquireId.current) {
